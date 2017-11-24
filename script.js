@@ -36,8 +36,6 @@ function calculate() {
     let R = Repayments(P, I, n);
     let extras = parseFloat(document.getElementById("extras").value);
     let d_i = 6;
-    let vals = plotPayments(P, I, R, n, d_i);
-    let additionalPayments = plotPayments(P, I, R + extras, n, d_i, window.calculations.lumpSums);
     let startDate = new Date(document.getElementById('start-date').value);
 
     let newTotalInterest = TotalRepayments(P, I, R + extras, window.calculations.lumpSums) - P;
@@ -45,7 +43,10 @@ function calculate() {
     let endDate = new Date(window.calculations.startDate.valueOf());
     endDate.setMonth(endDate.getMonth() + periodsToZero);
 
-    let labels = generateLabels(startDate, n, d_i);
+    let totalPeriods = Math.max(n, periodsToZero) +12;
+    let labels = generateLabels(startDate, totalPeriods, d_i);
+    let vals = plotPayments(P, I, R, totalPeriods, d_i);
+    let additionalPayments = plotPayments(P, I, R + extras, totalPeriods, d_i, window.calculations.lumpSums);
 
     document.getElementById("R").value = R.toCurrencyString();
     window.calculations.totalInterest.value = (R*n - P).toCurrencyString();
