@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <title>Loan repayments calculator</title>
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<h1>Better Loan Repayments Calculator</h1>
+<div style="overflow: auto">
+    <form id="form" autocomplete="off">
+        <label for="P">Principal</label>
+        <input type="text" name="P" id="P" value="300000" />
+
+        <label for="I">Interest Rate</label>
+        <input type="text" name="I" id="I" value="4.65" />
+
+        <label for="N">Term</label>
+        <input type="text" name="N" id="N" value="25" />
+
+        <label for="start-date">Start Date</label>
+        <input type="text" name="start-date" id="start-date" />
+
+        <label for="extras">Extra repayments</label>
+        <input type="text" name="extras" value="0" id="extras" />
+
+        <label for="R">Monthly Repayments</label>
+        <input type="text" name="R" id="R" disabled />
+
+        <label for="TI">Total interest</label>
+        <input type="text" name="TI" id="TI" disabled />
+
+        <label for="newTI">Recalculated total interest</label>
+        <input type="text" name="newTI" id="newTI" disabled />
+
+        <label for="intrestSavings">Interest Saved</label>
+        <input type="text" name="intrestSavings" id="intrestSavings" disabled />
+
+        <label for="loanEndDate">Loan end date</label>
+        <input type="text" name="loanEndDate" id="loanEndDate" disabled />
+
+        <input type="submit" value="Calculate" />
+    </form>
+
+    <div id="chart-wrapper">
+        <canvas id="Chart"></canvas>
+    </div>
+</div>
+<h2>Lump sum payments</h2>
+    <ul id="lumpSums-wrapper"></ul>
+
+    <form id="lumpSum" autocomplete="off">
+        <label for="lumpSum-date">Date</label>
+        <input type="text" name="lumpSum-date" id="lumpSum-date" />
+
+        <label for="lumpSum-amount">Amount</label>
+        <input type="text" name="lumpSum-amount" id="lumpSum-amount" />
+
+        <input type="submit" value="Add lump sum" />
+    </form>
+
+    <script type="text/javascript" src="Chart.min.js"></script>
+    <script type="text/javascript" src="functions.js"></script>
+    <script type="text/javascript" src="script.js"></script>
+</body>
+
+</html>
