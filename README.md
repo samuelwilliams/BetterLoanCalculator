@@ -1,6 +1,8 @@
 Better Loan Repayments Calculator
 =================================
 
+[https://samuelwilliams.github.io/BetterLoanCalculator/](https://samuelwilliams.github.io/BetterLoanCalculator/index.html)
+
 This is a small repayments calculator written in JS. The aim of this project is to create a better calculator with more
 features than the banks usually have.
 
