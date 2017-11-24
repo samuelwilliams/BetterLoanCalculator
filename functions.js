@@ -101,7 +101,7 @@ function _periodsToZero(P, I, R, lumpSums) {
 
     let n = PeriodsToZero(P, I, R);
 
-    if (Owing(P, I, R, n) > 0) n++;
+    if (Owing(P, I, R, n) > 0.01) n++;
 
     return n + lastLumpSumPeriod;
 }

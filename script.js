@@ -27,6 +27,7 @@ function Calculations() {
     this.intrestSavings = document.getElementById('intrestSavings');
     this.totalInterest = document.getElementById('TI');
     this.loanEndDate = document.getElementById('loanEndDate');
+    this.timeSavings = document.getElementById('timeSavings');
 }
 
 function calculate() {
@@ -40,19 +41,21 @@ function calculate() {
 
     let newTotalInterest = TotalRepayments(P, I, R + extras, window.calculations.lumpSums) - P;
     let periodsToZero = _periodsToZero(P, I, R + extras, window.calculations.lumpSums);
-    let endDate = new Date(window.calculations.startDate.valueOf());
-    endDate.setMonth(endDate.getMonth() + periodsToZero);
+    let newEndDate = new Date(window.calculations.startDate.valueOf());
+    newEndDate.setMonth(newEndDate.getMonth() + periodsToZero);
 
-    let totalPeriods = Math.max(n, periodsToZero) +12;
+    let totalPeriods = Math.max(n, periodsToZero) + 12;
     let labels = generateLabels(startDate, totalPeriods, d_i);
-    let vals = plotPayments(P, I, R, totalPeriods, d_i);
+    let vals = plotPayments(P, I, R, totalPeriods, d_i, []);
     let additionalPayments = plotPayments(P, I, R + extras, totalPeriods, d_i, window.calculations.lumpSums);
 
     document.getElementById("R").value = R.toCurrencyString();
     window.calculations.totalInterest.value = (R*n - P).toCurrencyString();
     document.getElementById("newTI").value = newTotalInterest.toCurrencyString();
     window.calculations.intrestSavings.value = ( (R*n - P) - newTotalInterest).toCurrencyString();
-    window.calculations.loanEndDate.value = endDate.toLocaleDateString();
+    window.calculations.loanEndDate.value = newEndDate.toLocaleDateString();
+
+    window.calculations.timeSavings.value = timeSavingsString(parseInt(PeriodsToZero(P, I, R) - periodsToZero));
 
     config.data.labels = labels;
     config.data.datasets[0].data = vals;
@@ -104,7 +107,6 @@ function addLumpSum(date, amount) {
 function removeLumpSum(id) {
     window.calculations.lumpSums.forEach(function (lumpSum, index) {
         if (lumpSum.id === id) {
-            console.log(lumpSum);
             window.calculations.lumpSums.splice(index, 1);
         }
     });
@@ -141,4 +143,21 @@ $( function() {
  */
 function dateDifferenceInMonths(date_1, date_2) {
     return (date_2.getFullYear() - date_1.getFullYear()) * 12 + date_2.getMonth() - date_1.getMonth();
+}
+
+function timeSavingsString(months) {
+    let returnString = '';
+
+    if (months > 18) {
+        let years = Math.floor(months / 12);
+        months = (months - years * 12);
+
+        returnString += years;
+        returnString += (years === 1) ? ' year ' : ' years ';
+    }
+
+    returnString += months;
+    returnString += (months === 1) ? ' month' : ' months';
+
+    return returnString;
 }
