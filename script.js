@@ -1,4 +1,3 @@
-
 let config = {
     type: 'line',
     data: {
@@ -50,9 +49,9 @@ function calculate() {
     let additionalPayments = plotPayments(P, I, R + extras, totalPeriods, d_i, window.calculations.lumpSums);
 
     document.getElementById("R").value = R.toCurrencyString();
-    window.calculations.totalInterest.value = (R*n - P).toCurrencyString();
+    window.calculations.totalInterest.value = (R * n - P).toCurrencyString();
     document.getElementById("newTI").value = newTotalInterest.toCurrencyString();
-    window.calculations.intrestSavings.value = ( (R*n - P) - newTotalInterest).toCurrencyString();
+    window.calculations.intrestSavings.value = ( (R * n - P) - newTotalInterest).toCurrencyString();
     window.calculations.loanEndDate.value = newEndDate.toLocaleDateString();
 
     window.calculations.timeSavings.value = timeSavingsString(parseInt(PeriodsToZero(P, I, R) - periodsToZero));
@@ -117,7 +116,7 @@ function removeLumpSum(id) {
     calculate();
 }
 
-window.onload = function() {
+window.onload = function () {
     let ctx = document.getElementById("Chart").getContext('2d');
     window.myLine = new Chart(ctx, config);
     window.calculations = new Calculations();
@@ -131,10 +130,10 @@ document.getElementById('form').addEventListener('submit', function (event) {
     calculate();
 });
 
-$( function() {
-    $( "#lumpSum-date" ).datepicker();
-    $( "#start-date" ).datepicker();
-} );
+$(function () {
+    $("#lumpSum-date").datepicker();
+    $("#start-date").datepicker();
+});
 
 /**
  *

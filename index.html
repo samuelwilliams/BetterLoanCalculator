@@ -3,10 +3,28 @@
 <head>
     <title>Loan repayments calculator</title>
 
+    <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="favicon/apple-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="favicon/apple-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="favicon/apple-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="favicon/apple-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="favicon/apple-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="favicon/apple-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="favicon/apple-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="favicon/apple-icon-180x180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon/android-icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="favicon/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon/favicon-16x16.png">
+    <link rel="manifest" href="favicon/manifest.json">
+    <meta name="msapplication-TileColor" content="#ffffff">
+    <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
 
@@ -14,39 +32,39 @@
 <div style="overflow: auto">
     <form id="form" autocomplete="off">
         <label for="P">Principal</label>
-        <input type="text" name="P" id="P" value="300000" />
+        <input type="text" name="P" id="P" value="300000"/>
 
         <label for="I">Interest Rate</label>
-        <input type="text" name="I" id="I" value="4.65" />
+        <input type="text" name="I" id="I" value="4.65"/>
 
         <label for="N">Term</label>
-        <input type="text" name="N" id="N" value="25" />
+        <input type="text" name="N" id="N" value="25"/>
 
         <label for="start-date">Start Date</label>
-        <input type="text" name="start-date" id="start-date" />
+        <input type="text" name="start-date" id="start-date"/>
 
         <label for="extras">Extra repayments</label>
-        <input type="text" name="extras" value="0" id="extras" />
+        <input type="text" name="extras" value="0" id="extras"/>
 
         <label for="R">Monthly Repayments</label>
-        <input type="text" name="R" id="R" disabled />
+        <input type="text" name="R" id="R" disabled/>
 
         <label for="TI">Total interest</label>
-        <input type="text" name="TI" id="TI" disabled />
+        <input type="text" name="TI" id="TI" disabled/>
 
         <label for="newTI">Recalculated total interest</label>
-        <input type="text" name="newTI" id="newTI" disabled />
+        <input type="text" name="newTI" id="newTI" disabled/>
 
         <label for="intrestSavings">Interest Saved</label>
-        <input type="text" name="intrestSavings" id="intrestSavings" disabled />
+        <input type="text" name="intrestSavings" id="intrestSavings" disabled/>
 
         <label for="loanEndDate">Recalculated loan end date</label>
-        <input type="text" name="loanEndDate" id="loanEndDate" disabled />
+        <input type="text" name="loanEndDate" id="loanEndDate" disabled/>
 
         <label for="timeSavings">Time saved on loan</label>
-        <input type="text" name="timeSavings" id="timeSavings" disabled />
+        <input type="text" name="timeSavings" id="timeSavings" disabled/>
 
-        <input type="submit" value="Calculate" />
+        <input type="submit" value="Calculate"/>
     </form>
 
     <div id="chart-wrapper">
@@ -54,17 +72,17 @@
     </div>
 </div>
 <h2>Lump sum payments</h2>
-    <ul id="lumpSums-wrapper"></ul>
+<ul id="lumpSums-wrapper"></ul>
 
-    <form id="lumpSum" autocomplete="off">
-        <label for="lumpSum-date">Date</label>
-        <input type="text" name="lumpSum-date" id="lumpSum-date" />
+<form id="lumpSum" autocomplete="off">
+    <label for="lumpSum-date">Date</label>
+    <input type="text" name="lumpSum-date" id="lumpSum-date"/>
 
-        <label for="lumpSum-amount">Amount</label>
-        <input type="text" name="lumpSum-amount" id="lumpSum-amount" />
+    <label for="lumpSum-amount">Amount</label>
+    <input type="text" name="lumpSum-amount" id="lumpSum-amount"/>
 
-        <input type="submit" value="Add lump sum" />
-    </form>
+    <input type="submit" value="Add lump sum"/>
+</form>
 
 <footer>
     <a href="disclaimer.html">Disclaimer</a> |
@@ -72,9 +90,9 @@
     &copy; 2017 <a href="https://github.com/samuelwilliams/">Samuel Williams</a>
 </footer>
 
-    <script type="text/javascript" src="Chart.min.js"></script>
-    <script type="text/javascript" src="functions.js"></script>
-    <script type="text/javascript" src="script.js"></script>
+<script type="text/javascript" src="Chart.min.js"></script>
+<script type="text/javascript" src="functions.js"></script>
+<script type="text/javascript" src="script.js"></script>
 </body>
 
 </html>
