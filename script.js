@@ -31,11 +31,11 @@ function Calculations() {
 }
 
 function calculate() {
-    let n = 12 * parseFloat(document.getElementById("N").value);
-    let P = parseFloat(document.getElementById("P").value);
-    let I = 1 + parseFloat(document.getElementById("I").value) / 1200;
+    let n = 12 * parseFloat(document.getElementById("N").value || 0);
+    let P = parseFloat(document.getElementById("P").value || 0);
+    let I = 1 + parseFloat(document.getElementById("I").value || 0) / 1200;
     let R = Repayments(P, I, n);
-    let extras = parseFloat(document.getElementById("extras").value);
+    let extras = parseFloat(document.getElementById("extras").value || 0);
     let d_i = 6;
     let startDate = new Date(document.getElementById('start-date').value);
 
@@ -44,7 +44,7 @@ function calculate() {
     let newEndDate = new Date(window.calculations.startDate.valueOf());
     newEndDate.setMonth(newEndDate.getMonth() + periodsToZero);
 
-    let totalPeriods = Math.max(n, periodsToZero) + 12;
+    let totalPeriods = Math.max(n, periodsToZero);
     let labels = generateLabels(startDate, totalPeriods, d_i);
     let vals = plotPayments(P, I, R, totalPeriods, d_i, []);
     let additionalPayments = plotPayments(P, I, R + extras, totalPeriods, d_i, window.calculations.lumpSums);

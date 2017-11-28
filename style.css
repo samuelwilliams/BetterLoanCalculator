@@ -35,3 +35,10 @@ ul#lumpSums-wrapper li {
     display: inline-block;
     padding: 0 10px;
 }
+
+footer {
+    margin-top: 100px;
+    display: block;
+    text-align: center;
+    font-size: 10px;
+}
