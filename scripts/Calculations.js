@@ -9,7 +9,7 @@
  * @param n {number} The period
  * @returns {number}
  */
-function Owing(P, I, R, n) {
+function owing(P, I, R, n) {
     return P * I ** n - R * ( (1 - I ** n) / (1 - I) );
 }
 
@@ -20,9 +20,8 @@ function Owing(P, I, R, n) {
  * @param I {number} The interest rate greater than 1, e.g. 4.59%, I = 1.0459
  * @param R {number} The periodic repayment amount.
  * @returns {number}
- * @constructor
  */
-function PeriodsToZero(P, I, R) {
+function periodsToZero(P, I, R) {
     return -Math.log( (P / R) * (1 - I) + 1 ) / Math.log(I);
 }
 
@@ -33,22 +32,20 @@ function PeriodsToZero(P, I, R) {
  * @param I {number} The interest rate greater than 1, e.g. 4.59%, I = 1.0459
  * @param n {number} Number of periods the loan is compounded over.
  * @returns {number}
- * @constructor
  */
-function Repayments(P, I, n) {
+function repayments(P, I, n) {
     return (P * I ** n) * (1 - I) / (1 - I ** n);
 }
 
 /**
  * A once off loan repayment on a given date (loan period).
  *
- * @param period {number}
- * @param amount {number}
- * @param id
+ * @param period {number} The period at which the lump sum takes effect.
+ * @param amount {number} The value of the lump sum.
  * @constructor
  */
-function LumpSum(period, amount, id) {
-    this.id = (typeof id === 'undefined') ? '' : id;
+function LumpSum(period, amount) {
+    this.id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 8);
     this.period = period;
     this.amount = amount;
 }
@@ -75,7 +72,7 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      *
      * @returns {number}
      */
-    this.TotalRepayments = function() {
+    this.totalRepayments = function() {
         this.sortLumpSums();
         let total = 0;
         let lastLumpSumPeriod = 0;
@@ -85,7 +82,7 @@ function Loan(principal, interestRate, repayment, lumpSums) {
             lastLumpSumPeriod = lumpSum.period;
         });
 
-        return total + repayment * (this.PeriodsToZero() - lastLumpSumPeriod);
+        return total + repayment * (this.periodsToZero() - lastLumpSumPeriod);
     };
 
     /**
@@ -93,20 +90,20 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      *
      * @returns {number}
      */
-    this.PeriodsToZero = function (){
+    this.periodsToZero = function (){
         this.sortLumpSums();
 
         let lastLumpSumPeriod = 0;
         let balance = principal;
 
         lumpSums.forEach(function (lumpSum) {
-            balance = Owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+            balance = owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
             lastLumpSumPeriod = lumpSum.period;
         });
 
-        let n = PeriodsToZero(balance, interestRate, repayment);
+        let n = periodsToZero(balance, interestRate, repayment);
 
-        if (Owing(balance, interestRate, repayment, n) > 0.01) n++;
+        if (owing(balance, interestRate, repayment, n) > 0.01) n++;
 
         return n + lastLumpSumPeriod;
     };
@@ -116,9 +113,8 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      *
      * @param n
      * @returns {number}
-     * @constructor
      */
-    this.AmountOwing = function(n) {
+    this.amountOwing = function(n) {
         this.sortLumpSums();
 
         let lastLumpSumPeriod = 0;
@@ -126,13 +122,13 @@ function Loan(principal, interestRate, repayment, lumpSums) {
 
         lumpSums.forEach(function (lumpSum) {
             if (lumpSum.period <= n) {
-                balance = Owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+                balance = owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
                 lastLumpSumPeriod = lumpSum.period;
             }
         });
 
-        return Math.max(0, Owing(balance, interestRate, repayment, n - lastLumpSumPeriod));
+        return Math.max(0, owing(balance, interestRate, repayment, n - lastLumpSumPeriod));
     };
 
-    this.TotalInterest = this.TotalRepayments() - principal;
+    this.totalInterest = this.totalRepayments() - principal;
 }
