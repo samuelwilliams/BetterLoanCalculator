@@ -82,17 +82,13 @@ function calculate() {
 }
 
 /**
- * Creates a lumps sum and adds it as a list element to the lumpSums-wrapper UL.
+ * Adds a LumpSum as a list element to the lumpSums-wrapper UL.
  *
- * @param date {Date}
- * @param amount {number}
+ * @param lumpSum {LumpSum}
  */
-function addLumpSum(date, amount) {
-    let lumpSum = new LumpSum(
-        dateDifferenceInMonths(window.startDate, date),
-        amount
-    );
-    window.lumpSums.push(lumpSum);
+function createLumpSumNode(lumpSum) {
+    let date = new Date(window.startDate.getTime());
+    date.setMonth(date.getMonth() + lumpSum.period);
 
     let dateElement = document.createElement('span');
     dateElement.className = 'date';
@@ -100,7 +96,7 @@ function addLumpSum(date, amount) {
 
     let amountElement = document.createElement('span');
     amountElement.className = 'amount';
-    amountElement.appendChild(document.createTextNode(amount.toCurrencyString()));
+    amountElement.appendChild(document.createTextNode(lumpSum.amount.toCurrencyString()));
 
     let deleteElement = document.createElement('a');
     deleteElement.innerText = 'delete';
@@ -229,10 +225,14 @@ window.onload = function () {
 document.getElementById('lumpSum').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    addLumpSum(
-        new Date(window.view.lumpSumDate.value),
+    let date = new Date(window.view.lumpSumDate.value);
+    let lumpSum = new LumpSum(
+        dateDifferenceInMonths(window.startDate, date),
         parseFloat(window.view.lumpSumAmount.value)
     );
+
+    window.lumpSums.push(lumpSum);
+    createLumpSumNode(lumpSum);
 
     this.reset();
     calculate();
