@@ -32,7 +32,7 @@ function View() {
     this.interestRate = document.getElementById('I');
     this.loanTerm = document.getElementById('N');
     this.principal = document.getElementById('P');
-    this.interestSavings = document.getElementById('intrestSavings');
+    this.interestSavings = document.getElementById('interestSavings');
     this.totalInterest = document.getElementById('TI');
     this.loanEndDate = document.getElementById('loanEndDate');
     this.timeSavings = document.getElementById('timeSavings');
@@ -42,7 +42,6 @@ function View() {
     this.chart = document.getElementById('Chart');
     this.comparisonInterest = document.getElementById('newTI');
 
-    this.lumpSumForm = document.getElementById('lumpSum');
     this.lumpSumDate = document.getElementById('lumpSum-date');
     this.lumpSumAmount = document.getElementById('lumpSum-amount');
     this.lumpSumsWrapper = document.getElementById('lumpSums-wrapper');
@@ -52,16 +51,16 @@ function View() {
  * Runs the calculations and updates the chart.
  */
 function calculate() {
-    let P = parseFloat(view.principal.value || 0);
-    let I = 1 + parseFloat(view.interestRate.value || 0) / 1200;
-    let N = 12 * parseFloat(view.loanTerm.value || 0);
+    let P = parseFloat(view.principal.value || '0');
+    let I = 1 + parseFloat(view.interestRate.value || '0') / 1200;
+    let N = 12 * parseFloat(view.loanTerm.value || '0');
     let R = repayments(P, I, N);
-    let extraRepayments = parseFloat(window.view.extraRepayments.value || 0);
+    let extraRepayments = parseFloat(window.view.extraRepayments.value || '0');
     window.startDate = new Date(window.view.startDate.value);
     let endDate = new Date(window.view.startDate.value);
 
-    window.loan = new Loan(P, I, R, []);
-    window.comparison = new Loan(P, I, R + extraRepayments, window.lumpSums);
+    window.loan = new Loan(P, I, R, window.startDate, []);
+    window.comparison = new Loan(P, I, R + extraRepayments, window.startDate, window.lumpSums);
 
     N = Math.max(window.loan.periodsToZero(), window.comparison.periodsToZero());
     endDate.setMonth(startDate.getMonth() + window.comparison.periodsToZero());
@@ -71,7 +70,7 @@ function calculate() {
     window.view.comparisonInterest.value = window.comparison.totalInterest.toCurrencyString();
     window.view.interestSavings.value = (window.loan.totalInterest - window.comparison.totalInterest).toCurrencyString();
     window.view.loanEndDate.value = endDate.toLocaleDateString();
-    window.view.timeSavings.value = timeSavingsString(parseInt(window.loan.periodsToZero() - window.comparison.periodsToZero()));
+    window.view.timeSavings.value = timeSavingsString(window.loan.periodsToZero() - window.comparison.periodsToZero());
 
     config.resolution = (N <= 120) ? 6 : 12;
     config.data.labels = generateLabels(new Date(window.startDate.getTime()), N, config.resolution);
@@ -87,12 +86,9 @@ function calculate() {
  * @param lumpSum {LumpSum}
  */
 function createLumpSumNode(lumpSum) {
-    let date = new Date(window.startDate.getTime());
-    date.setMonth(date.getMonth() + lumpSum.period);
-
     let dateElement = document.createElement('span');
     dateElement.className = 'date';
-    dateElement.appendChild(document.createTextNode(date.toLocaleDateString()));
+    dateElement.appendChild(document.createTextNode(lumpSum.date.toLocaleDateString()));
 
     let amountElement = document.createElement('span');
     amountElement.className = 'amount';
@@ -142,16 +138,16 @@ function removeLumpSum(lumpSum) {
  * @returns {Array}
  */
 function generatePlotPoints(Loan, N, d_i) {
-    let vals = [];
+    let values = [];
 
     for (let i = 0; i <= N; i += d_i) {
-        vals.push({
+        values.push({
             x: i,
             y: Loan.amountOwing(i)
         });
     }
 
-    return vals;
+    return values;
 }
 
 /**
@@ -170,18 +166,6 @@ function generateLabels(startDate, N, d_i) {
     }
 
     return labels;
-}
-
-
-/**
- * Calculates the number of months between two dates.
- *
- * @param date_1 {Date}
- * @param date_2 {Date}
- * @returns {number}
- */
-function dateDifferenceInMonths(date_1, date_2) {
-    return (date_2.getFullYear() - date_1.getFullYear()) * 12 + date_2.getMonth() - date_1.getMonth();
 }
 
 /**
@@ -225,9 +209,8 @@ window.onload = function () {
 document.getElementById('lumpSum').addEventListener('submit', function (event) {
     event.preventDefault();
 
-    let date = new Date(window.view.lumpSumDate.value);
     let lumpSum = new LumpSum(
-        dateDifferenceInMonths(window.startDate, date),
+        new Date(window.view.lumpSumDate.value),
         parseFloat(window.view.lumpSumAmount.value)
     );
 

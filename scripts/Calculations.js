@@ -38,16 +38,28 @@ function repayments(P, I, n) {
 }
 
 /**
+ * Calculates the number of months between two dates.
+ *
+ * @param date_1 {Date}
+ * @param date_2 {Date}
+ * @returns {number}
+ */
+function dateDifferenceInMonths(date_1, date_2) {
+    return (date_2.getFullYear() - date_1.getFullYear()) * 12 + date_2.getMonth() - date_1.getMonth();
+}
+
+/**
  * A once off loan repayment on a given date (loan period).
  *
- * @param period {number} The period at which the lump sum takes effect.
+ * @param date {Date} The date at which the lump sum takes effect.
  * @param amount {number} The value of the lump sum.
  * @constructor
  */
-function LumpSum(period, amount) {
+function LumpSum(date, amount) {
     this.id = Math.random().toString(36).replace(/[^a-z]+/g, '').substr(0, 8);
-    this.period = period;
+    this.date = date;
     this.amount = amount;
+    this.period = 0;
 }
 
 /**
@@ -56,16 +68,21 @@ function LumpSum(period, amount) {
  * @param principal {number} The loan principal amount.
  * @param interestRate {number} The interest rate of the loan per compounding period.
  * @param repayment {number} Loan repayment each compounding period.
+ * @param startDate {Date}
  * @param lumpSums {Array.<LumpSum>}
  * @constructor
  */
-function Loan(principal, interestRate, repayment, lumpSums) {
+function Loan(principal, interestRate, repayment, startDate, lumpSums) {
 
-    this.sortLumpSums = function() {
-        lumpSums.sort(function (a, b) {
-            return (a.period === b.period) ? 0 : (a.period < b.period) ? -1 : 1;
-        });
-    };
+    // Calculate the period at which the lumpSum takes effect.
+    lumpSums.forEach(function(lumpSum) {
+        lumpSum.period = dateDifferenceInMonths(startDate, lumpSum.date)
+    });
+
+    // Sort the lumps sums by period ascending.
+    lumpSums.sort(function (a, b) {
+        return (a.period === b.period) ? 0 : (a.period < b.period) ? -1 : 1;
+    });
 
     /**
      * Calculates the total of all payments over the term of the loan.
@@ -73,7 +90,6 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      * @returns {number}
      */
     this.totalRepayments = function() {
-        this.sortLumpSums();
         let total = 0;
         let lastLumpSumPeriod = 0;
 
@@ -82,7 +98,9 @@ function Loan(principal, interestRate, repayment, lumpSums) {
             lastLumpSumPeriod = lumpSum.period;
         });
 
-        return total + repayment * (this.periodsToZero() - lastLumpSumPeriod);
+        return total +
+            repayment * (this.periodsToZero() - lastLumpSumPeriod - 1) +
+            this.amountOwing(this.periodsToZero() -1);
     };
 
     /**
@@ -91,8 +109,6 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      * @returns {number}
      */
     this.periodsToZero = function (){
-        this.sortLumpSums();
-
         let lastLumpSumPeriod = 0;
         let balance = principal;
 
@@ -101,11 +117,16 @@ function Loan(principal, interestRate, repayment, lumpSums) {
             lastLumpSumPeriod = lumpSum.period;
         });
 
-        let n = periodsToZero(balance, interestRate, repayment);
+        let remainingPeriods = periodsToZero(balance, interestRate, repayment);
 
-        if (owing(balance, interestRate, repayment, n) > 0.01) n++;
+        // Handle number rounding. If the decimal place GT 0.001, round up, otherwise round down.
+        if (remainingPeriods - Math.floor(remainingPeriods) > 0.001) {
+            remainingPeriods = Math.ceil((remainingPeriods));
+        } else {
+            remainingPeriods = Math.floor(remainingPeriods);
+        }
 
-        return n + lastLumpSumPeriod;
+        return lastLumpSumPeriod + remainingPeriods;
     };
 
     /**
@@ -115,8 +136,6 @@ function Loan(principal, interestRate, repayment, lumpSums) {
      * @returns {number}
      */
     this.amountOwing = function(n) {
-        this.sortLumpSums();
-
         let lastLumpSumPeriod = 0;
         let balance = principal;
 
