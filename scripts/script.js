@@ -1,3 +1,50 @@
+ChartColours = {
+    "Red": {"hex": "#e6194b", "rgb": "rgb(230, 25, 75)"},
+    "Green": {"hex": "#3cb44b", "rgb": "rgb(60, 180, 75)"},
+    "Yellow": {"hex": "#ffe119", "rgb": "rgb(255, 225, 25)"},
+    "Blue": {"hex": "#0082c8", "rgb": "rgb(0, 130, 200)"},
+    "Orange": {"hex": "#f58231", "rgb": "rgb(245, 130, 48)"},
+    "Purple": {"hex": "#911eb4", "rgb": "rgb(145, 30, 180)"},
+    "Cyan": {"hex": "#46f0f0", "rgb": "rgb(70, 240, 240)"},
+    "Magenta": {"hex": "#f032e6", "rgb": "rgb(240, 50, 230)"},
+    "Lime": {"hex": "#d2f53c", "rgb": "rgb(210, 245, 60)"},
+    "Pink": {"hex": "#fabebe", "rgb": "rgb(250, 190, 190)"},
+    "Teal": {"hex": "#008080", "rgb": "rgb(0, 128, 128)"},
+    "Lavender": {"hex": "#e6beff", "rgb": "rgb(230, 190, 255)"},
+    "Brown": {"hex": "#aa6e28", "rgb": "rgb(170, 110, 40)"},
+    "Maroon": {"hex": "#800000", "rgb": "rgb(128, 0, 0)"},
+    "Mint": {"hex": "#aaffc3", "rgb": "rgb(170, 255, 195)"},
+    "Olive": {"hex": "#808000", "rgb": "rgb(128, 128, 0)"},
+    "Coral": {"hex": "#ffd8b1", "rgb": "rgb(255, 215, 180)"},
+    "Navy": {"hex": "#000080", "rgb": "rgb(0, 0, 128)"},
+    "Grey": {"hex": "#808080", "rgb": "rgb(128, 128, 128)"},
+    "Black": {"hex": "#000000", "rgb": "rgb(0, 0, 0)"},
+};
+
+/**
+ * Picks out a random colour.
+ *
+ * @returns {*}
+ */
+function randomColor() {
+    let colours = [];
+    for (let colour in ChartColours) {
+        colours.push(colour);
+    }
+    let colour = colours[Math.floor(Math.random() * colours.length)];
+
+    return ChartColours[colour];
+}
+
+const blankDataset = {
+    label: '',
+    backgroundColor: ChartColours.Blue.hex,
+    borderColor: ChartColours.Blue.hex,
+    data: [],
+    fill: false,
+    pointRadius: 2.5
+};
+
 //The chart configuration
 config = {
     resolution: 12, //Number of compounding periods between plot points.
@@ -6,15 +53,8 @@ config = {
         labels: [],
         datasets: [{
             label: 'Standard Repayments',
-            backgroundColor: '#0000ff',
-            borderColor: '#0000ff',
-            data: [],
-            fill: false,
-            pointRadius: 2.5
-        }, {
-            label: 'Extra Repayments',
-            backgroundColor: '#ff0000',
-            borderColor: '#ff0000',
+            backgroundColor: ChartColours.Blue.hex,
+            borderColor: ChartColours.Blue.hex,
             data: [],
             fill: false,
             pointRadius: 2.5
@@ -41,6 +81,7 @@ function View() {
     this.repayments = document.getElementById('R');
     this.chart = document.getElementById('Chart');
     this.comparisonInterest = document.getElementById('newTI');
+    this.name = document.getElementById('Name');
 
     this.lumpSumDate = document.getElementById('lumpSum-date');
     this.lumpSumAmount = document.getElementById('lumpSum-amount');
@@ -48,34 +89,54 @@ function View() {
 }
 
 /**
+ * Takes the form input and generates a Loan object.
+ *
+ * @returns {Loan}
+ */
+function loanFromInput() {
+    let principal = parseFloat(view.principal.value || '0');
+    let interest = 1 + parseFloat(view.interestRate.value || '0') / 1200;
+    let term = 12 * parseFloat(view.loanTerm.value || '0');
+    let minRepayments = repayments(principal, interest, term);
+    let extraRepayments = parseFloat(window.view.extraRepayments.value || '0');
+    let startDate = new Date(window.view.startDate.value);
+
+    let loan = new Loan(principal, interest, minRepayments + extraRepayments, startDate, window.lumpSums);
+    loan.name = view.name.value;
+    loan.term = term;
+
+    return loan;
+}
+
+function newComparison() {
+    let loan = loanFromInput();
+    let dataset = Object.assign({}, blankDataset);
+    let color = randomColor();
+
+    dataset.label = loan.name;
+    dataset.backgroundColor = color.hex;
+    dataset.borderColor = color.hex;
+    dataset.data = generatePlotPoints(loan, config.resolution);
+
+    config.data.datasets.push(dataset);
+    window.myLine.update();
+}
+
+/**
  * Runs the calculations and updates the chart.
  */
 function calculate() {
-    let P = parseFloat(view.principal.value || '0');
-    let I = 1 + parseFloat(view.interestRate.value || '0') / 1200;
-    let N = 12 * parseFloat(view.loanTerm.value || '0');
-    let R = repayments(P, I, N);
-    let extraRepayments = parseFloat(window.view.extraRepayments.value || '0');
-    window.startDate = new Date(window.view.startDate.value);
-    let endDate = new Date(window.view.startDate.value);
+    let loan = loanFromInput();
+    let term = Math.ceil(loan.periodsToZero() / 6) * 6;
 
-    window.loan = new Loan(P, I, R, window.startDate, []);
-    window.comparison = new Loan(P, I, R + extraRepayments, window.startDate, window.lumpSums);
+    window.view.repayments.value = loan.minimumRepayments().toCurrencyString();
+    window.view.totalInterest.value = loan.totalInterest().toCurrencyString();
+    window.view.loanEndDate.value = loan.getEndDate().toLocaleDateString();
 
-    N = Math.max(window.loan.periodsToZero(), window.comparison.periodsToZero());
-    endDate.setMonth(startDate.getMonth() + window.comparison.periodsToZero());
+    config.resolution = (term <= 120) ? 6 : 12;
+    config.data.labels = generateLabels(new Date(loan.startDate.getTime()), term, config.resolution);
 
-    window.view.repayments.value = R.toCurrencyString();
-    window.view.totalInterest.value = window.loan.totalInterest.toCurrencyString();
-    window.view.comparisonInterest.value = window.comparison.totalInterest.toCurrencyString();
-    window.view.interestSavings.value = (window.loan.totalInterest - window.comparison.totalInterest).toCurrencyString();
-    window.view.loanEndDate.value = endDate.toLocaleDateString();
-    window.view.timeSavings.value = timeSavingsString(window.loan.periodsToZero() - window.comparison.periodsToZero());
-
-    config.resolution = (N <= 120) ? 6 : 12;
-    config.data.labels = generateLabels(new Date(window.startDate.getTime()), N, config.resolution);
-    config.data.datasets[0].data = generatePlotPoints(window.loan, N, config.resolution);
-    config.data.datasets[1].data = generatePlotPoints(window.comparison, N, config.resolution);
+    config.data.datasets[0].data = generatePlotPoints(loan, config.resolution);
 
     window.myLine.update();
 }
@@ -133,14 +194,13 @@ function removeLumpSum(lumpSum) {
  * Generate plot points for a given Loan
  *
  * @param Loan {Loan}
- * @param N {number} Number of periods to plot.
  * @param d_i {number} The resolution of the graph.
  * @returns {Array}
  */
-function generatePlotPoints(Loan, N, d_i) {
+function generatePlotPoints(Loan, d_i) {
     let values = [];
 
-    for (let i = 0; i <= N; i += d_i) {
+    for (let i = 0; i <= Loan.periodsToZero(); i += d_i) {
         values.push({
             x: i,
             y: Loan.amountOwing(i)
@@ -201,8 +261,7 @@ window.onload = function () {
     window.startDate = new Date;
     window.view.startDate.value = window.startDate.toLocaleDateString();
     window.lumpSums = [];
-
-    calculate();
+    window.loans = [];
 };
 
 //Listener for the lump sum form. This creates the lump sum list elements from the form input.
@@ -225,6 +284,11 @@ document.getElementById('lumpSum').addEventListener('submit', function (event) {
 document.getElementById('form').addEventListener('submit', function (event) {
     event.preventDefault();
     calculate();
+});
+
+document.getElementById('addComparison').addEventListener('click', function (event) {
+    event.preventDefault();
+    newComparison();
 });
 
 //Initialise the JQuery-UI date pickers.

@@ -74,80 +74,146 @@ function LumpSum(date, amount) {
  */
 function Loan(principal, interestRate, repayment, startDate, lumpSums) {
 
+    /**
+     * @type {number}
+     */
+    this.principal = principal;
+
+    /**
+     * @type {number}
+     */
+    this.interestRate = interestRate;
+
+    /**
+     * @type {number}
+     */
+    this.repayment = repayment;
+
+    /**
+     * @type {Date}
+     */
+    this.startDate = startDate;
+
+    /**
+     * @type {string}
+     */
+    this.name = '';
+
+    /**
+     * The term of the loan.
+     *
+     * @type {number}
+     */
+    this.term = 0;
+
+    /**
+     * @type {Array<LumpSum>}
+     */
+    this.lumpSums = lumpSums;
+
     // Calculate the period at which the lumpSum takes effect.
-    lumpSums.forEach(function(lumpSum) {
+    this.lumpSums.forEach(function (lumpSum) {
         lumpSum.period = dateDifferenceInMonths(startDate, lumpSum.date)
     });
 
     // Sort the lumps sums by period ascending.
-    lumpSums.sort(function (a, b) {
+    this.lumpSums.sort(function (a, b) {
         return (a.period === b.period) ? 0 : (a.period < b.period) ? -1 : 1;
     });
-
-    /**
-     * Calculates the total of all payments over the term of the loan.
-     *
-     * @returns {number}
-     */
-    this.totalRepayments = function() {
-        let total = 0;
-        let lastLumpSumPeriod = 0;
-
-        lumpSums.forEach(function (lumpSum) {
-            total += (lumpSum.period - lastLumpSumPeriod) * repayment + lumpSum.amount;
-            lastLumpSumPeriod = lumpSum.period;
-        });
-
-        return total +
-            repayment * (this.periodsToZero() - lastLumpSumPeriod - 1) +
-            this.amountOwing(this.periodsToZero() -1);
-    };
-
-    /**
-     * Calculates the number of periods for the loan balance to reach $0.00.
-     *
-     * @returns {number}
-     */
-    this.periodsToZero = function (){
-        let lastLumpSumPeriod = 0;
-        let balance = principal;
-
-        lumpSums.forEach(function (lumpSum) {
-            balance = owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
-            lastLumpSumPeriod = lumpSum.period;
-        });
-
-        let remainingPeriods = periodsToZero(balance, interestRate, repayment);
-
-        // Handle number rounding. If the decimal place GT 0.001, round up, otherwise round down.
-        if (remainingPeriods - Math.floor(remainingPeriods) > 0.001) {
-            remainingPeriods = Math.ceil((remainingPeriods));
-        } else {
-            remainingPeriods = Math.floor(remainingPeriods);
-        }
-
-        return lastLumpSumPeriod + remainingPeriods;
-    };
-
-    /**
-     * Calculates the amount owing at some loan repayment period, n.
-     *
-     * @param n
-     * @returns {number}
-     */
-    this.amountOwing = function(n) {
-        let lastLumpSumPeriod = 0;
-        let balance = principal;
-
-        lumpSums.forEach(function (lumpSum) {
-            if (lumpSum.period <= n) {
-                balance = owing(balance, interestRate, repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
-                lastLumpSumPeriod = lumpSum.period;
-            }
-        });
-
-        return Math.max(0, owing(balance, interestRate, repayment, n - lastLumpSumPeriod));
-    };
-
-    this.totalInterest = this.totalRepayments() - principal;
 }
+
+/**
+ * Calculates the total of all payments over the term of the loan.
+ *
+ * @returns {number}
+ */
+Loan.prototype.totalRepayments = function() {
+    let total = 0;
+    let lastLumpSumPeriod = 0;
+
+    lumpSums.forEach((lumpSum) => {
+        total += (lumpSum.period - lastLumpSumPeriod) * this.repayment + lumpSum.amount;
+        lastLumpSumPeriod = lumpSum.period;
+    });
+
+    return total +
+        this.repayment * (this.periodsToZero() - lastLumpSumPeriod - 1) +
+        this.amountOwing(this.periodsToZero() -1);
+};
+
+/**
+ * Calculates the number of periods for the loan balance to reach $0.00.
+ *
+ * @returns {number}
+ */
+Loan.prototype.periodsToZero = function (){
+    let lastLumpSumPeriod = 0;
+    let balance = this.principal;
+
+    lumpSums.forEach((lumpSum) => {
+        balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+        lastLumpSumPeriod = lumpSum.period;
+    });
+
+    let remainingPeriods = periodsToZero(balance, this.interestRate, this.repayment);
+
+    // Handle number rounding. If the decimal place GT 0.001, round up, otherwise round down.
+    if (remainingPeriods - Math.floor(remainingPeriods) > 0.001) {
+        remainingPeriods = Math.ceil((remainingPeriods));
+    } else {
+        remainingPeriods = Math.floor(remainingPeriods);
+    }
+
+    return lastLumpSumPeriod + remainingPeriods;
+};
+
+/**
+ * Calculates the amount owing at some loan repayment period, n.
+ *
+ * @param n
+ * @returns {number}
+ */
+Loan.prototype.amountOwing = function(n) {
+    let lastLumpSumPeriod = 0;
+    let balance = this.principal;
+
+    lumpSums.forEach((lumpSum) => {
+        if (lumpSum.period <= n) {
+            balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+            lastLumpSumPeriod = lumpSum.period;
+        }
+    });
+
+    return Math.max(0, owing(balance, this.interestRate, this.repayment, n - lastLumpSumPeriod));
+};
+
+/**
+ * Calculates the total interest payable over the life of the loan.
+ *
+ * @returns {number}
+ */
+Loan.prototype.totalInterest = function() {
+    return this.totalRepayments() - this.principal;
+};
+
+/**
+ * Get the end date of the loan.
+ * This assumes that each compounding period represents one month.
+ *
+ * @returns {Date}
+ */
+Loan.prototype.getEndDate = function getEndDate() {
+    let endDate = new Date(this.startDate.getTime());
+    endDate.setMonth(endDate.getMonth() + this.periodsToZero());
+
+    return endDate;
+};
+
+/**
+ * Calculates the minimum repayments required.
+ *
+ * @returns {number}
+ */
+Loan.prototype.minimumRepayments = function minimumRepayments() {
+    return repayments(this.principal, this.interestRate, this.term);
+};

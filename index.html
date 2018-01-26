@@ -31,6 +31,9 @@
 <h1>Better Loan Repayments Calculator</h1>
 <div style="overflow: auto">
     <form id="form" autocomplete="off">
+        <label for="Name">Name</label>
+        <input type="text" name="Name" id="Name" value="New loan" />
+
         <label for="P">Principal</label>
         <input type="text" name="P" id="P" value="300000"/>
 
@@ -65,12 +68,15 @@
         <input type="text" name="timeSavings" id="timeSavings" disabled/>
 
         <input type="submit" value="Calculate"/>
+
+        <input type="button" value="Add Comparison" id="addComparison" />
     </form>
 
     <div id="chart-wrapper">
         <canvas id="Chart"></canvas>
     </div>
 </div>
+
 <h2>Lump sum payments</h2>
 <ul id="lumpSums-wrapper"></ul>
 
