@@ -1,4 +1,4 @@
-ChartColours = {
+ChartColors = {
     "Red": {"hex": "#e6194b", "rgb": "rgb(230, 25, 75)"},
     "Green": {"hex": "#3cb44b", "rgb": "rgb(60, 180, 75)"},
     "Yellow": {"hex": "#ffe119", "rgb": "rgb(255, 225, 25)"},
@@ -22,24 +22,25 @@ ChartColours = {
 };
 
 /**
- * Picks out a random colour.
+ * Pick a color from the ChartColors sequentially.
  *
  * @returns {*}
  */
-function randomColor() {
-    let colours = [];
-    for (let colour in ChartColours) {
-        colours.push(colour);
+function pickColor() {
+    if (typeof window.colorIndex === 'undefined' || window.colorIndex >= Object.keys(ChartColors).length) {
+        window.colorIndex = 0;
     }
-    let colour = colours[Math.floor(Math.random() * colours.length)];
 
-    return ChartColours[colour];
+    let color = ChartColors[Object.keys(ChartColors)[window.colorIndex]];
+    window.colorIndex++;
+
+    return color;
 }
 
 const blankDataset = {
     label: '',
-    backgroundColor: ChartColours.Blue.hex,
-    borderColor: ChartColours.Blue.hex,
+    backgroundColor: ChartColors.Blue.hex,
+    borderColor: ChartColors.Blue.hex,
     data: [],
     fill: false,
     pointRadius: 2.5,
@@ -65,8 +66,8 @@ config = {
         labels: [],
         datasets: [{
             label: 'Loan',
-            backgroundColor: ChartColours.Blue.hex,
-            borderColor: ChartColours.Blue.hex,
+            backgroundColor: ChartColors.Blue.hex,
+            borderColor: ChartColors.Blue.hex,
             data: [],
             fill: false,
             pointRadius: 2.5
@@ -151,7 +152,7 @@ function loanFromInput() {
 function newComparison() {
     let loan = loanFromInput();
     let dataset = Object.assign({}, blankDataset);
-    let color = randomColor();
+    let color = pickColor();
 
     window.loans.push(loan);
 
@@ -162,7 +163,6 @@ function newComparison() {
 
     config.data.datasets.push(dataset);
     window.myLine.update();
-
     buildTable();
 }
 
