@@ -63,6 +63,42 @@ function LumpSum(date, amount) {
 }
 
 /**
+ * Returns a clone of the LumpSum
+ *
+ * @returns {LumpSum}
+ */
+LumpSum.prototype.clone = function() {
+    let clone = new LumpSum(this.date, this.amount);
+    clone.id = this.id;
+    clone.period = this.period;
+
+    return clone;
+};
+
+/**
+ * An array collection of LumpSums
+ *
+ * @constructor
+ */
+function LumpSumCollection() {}
+
+LumpSumCollection.prototype = Object.create(Array.prototype);
+
+/**
+ * Return a clone of the LumpSum collection
+ *
+ * @returns {LumpSumCollection}
+ */
+LumpSumCollection.prototype.clone = function() {
+    let output = new LumpSumCollection();
+    this.forEach(function (lumpSum){
+       output.push(lumpSum.clone());
+    });
+
+    return output;
+};
+
+/**
  * The application
  *
  * @param principal {number} The loan principal amount.
@@ -131,7 +167,7 @@ Loan.prototype.totalRepayments = function() {
     let total = 0;
     let lastLumpSumPeriod = 0;
 
-    lumpSums.forEach((lumpSum) => {
+    this.lumpSums.forEach((lumpSum) => {
         total += (lumpSum.period - lastLumpSumPeriod) * this.repayment + lumpSum.amount;
         lastLumpSumPeriod = lumpSum.period;
     });
@@ -150,7 +186,7 @@ Loan.prototype.periodsToZero = function (){
     let lastLumpSumPeriod = 0;
     let balance = this.principal;
 
-    lumpSums.forEach((lumpSum) => {
+    this.lumpSums.forEach((lumpSum) => {
         balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
         lastLumpSumPeriod = lumpSum.period;
     });
@@ -177,7 +213,7 @@ Loan.prototype.amountOwing = function(n) {
     let lastLumpSumPeriod = 0;
     let balance = this.principal;
 
-    lumpSums.forEach((lumpSum) => {
+    this.lumpSums.forEach((lumpSum) => {
         if (lumpSum.period <= n) {
             balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
             lastLumpSumPeriod = lumpSum.period;
@@ -185,6 +221,22 @@ Loan.prototype.amountOwing = function(n) {
     });
 
     return Math.max(0, owing(balance, this.interestRate, this.repayment, n - lastLumpSumPeriod));
+};
+
+/**
+ * Amount owing on a particular date.
+ *
+ * @param {Date} date
+ * @returns {number}
+ */
+Loan.prototype.amountOwingAtDate = function(date) {
+    if (date.getTime() < this.startDate.getTime()) {
+        return this.principal;
+    }
+
+    let period = dateDifferenceInMonths(this.startDate, date);
+
+    return this.amountOwing(period);
 };
 
 /**
@@ -216,4 +268,30 @@ Loan.prototype.getEndDate = function getEndDate() {
  */
 Loan.prototype.minimumRepayments = function minimumRepayments() {
     return repayments(this.principal, this.interestRate, this.term);
+};
+
+function LoanCollection() {}
+
+LoanCollection.prototype = Object.create(Array.prototype);
+
+LoanCollection.prototype.earliestStartDate = function() {
+    let earliestDate = this[0].startDate;
+    this.forEach(function(loan) {
+        if (loan.startDate.getTime() < earliestDate.getTime()) {
+            earliestDate = Loan.startDate;
+        }
+    });
+
+    return earliestDate;
+};
+
+LoanCollection.prototype.latestEndDate = function() {
+    let lastDate = this[0].getEndDate();
+    this.forEach(function(loan) {
+        if (loan.getEndDate().getTime() > lastDate.getTime()) {
+            lastDate = loan.getEndDate();
+        }
+    });
+
+    return lastDate;
 };

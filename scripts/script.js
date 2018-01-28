@@ -42,7 +42,19 @@ const blankDataset = {
     borderColor: ChartColours.Blue.hex,
     data: [],
     fill: false,
-    pointRadius: 2.5
+    pointRadius: 2.5,
+    options: {
+        scales: {
+            xAxes: [{
+                type: 'time',
+                time: {
+                    displayFormats: {
+                        quarter: 'MMM YYYY'
+                    }
+                }
+            }]
+        }
+    }
 };
 
 //The chart configuration
@@ -52,13 +64,42 @@ config = {
     data: {
         labels: [],
         datasets: [{
-            label: 'Standard Repayments',
+            label: 'Loan',
             backgroundColor: ChartColours.Blue.hex,
             borderColor: ChartColours.Blue.hex,
             data: [],
             fill: false,
             pointRadius: 2.5
         }]
+    },
+    options: {
+        responsive: true,
+        title:{
+            display: false
+        },
+        scales: {
+            xAxes: [{
+                type: "time",
+                display: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: 'Date'
+                },
+                ticks: {
+                    major: {
+                        fontStyle: "bold",
+                        fontColor: "#FF0000"
+                    }
+                }
+            }],
+            yAxes: [{
+                display: true,
+                scaleLabel: {
+                    display: true,
+                    labelString: 'value'
+                }
+            }]
+        }
     }
 };
 
@@ -72,20 +113,19 @@ function View() {
     this.interestRate = document.getElementById('I');
     this.loanTerm = document.getElementById('N');
     this.principal = document.getElementById('P');
-    this.interestSavings = document.getElementById('interestSavings');
-    this.totalInterest = document.getElementById('TI');
+    this.totalInterest = document.getElementById('totalInterest');
     this.loanEndDate = document.getElementById('loanEndDate');
-    this.timeSavings = document.getElementById('timeSavings');
     this.extraRepayments = document.getElementById('extras');
     this.startDate = document.getElementById('start-date');
     this.repayments = document.getElementById('R');
     this.chart = document.getElementById('Chart');
-    this.comparisonInterest = document.getElementById('newTI');
     this.name = document.getElementById('Name');
 
     this.lumpSumDate = document.getElementById('lumpSum-date');
     this.lumpSumAmount = document.getElementById('lumpSum-amount');
     this.lumpSumsWrapper = document.getElementById('lumpSums-wrapper');
+
+    this.loanTable = document.getElementById('loanTableBody');
 }
 
 /**
@@ -101,7 +141,7 @@ function loanFromInput() {
     let extraRepayments = parseFloat(window.view.extraRepayments.value || '0');
     let startDate = new Date(window.view.startDate.value);
 
-    let loan = new Loan(principal, interest, minRepayments + extraRepayments, startDate, window.lumpSums);
+    let loan = new Loan(principal, interest, minRepayments + extraRepayments, startDate, window.lumpSums.clone());
     loan.name = view.name.value;
     loan.term = term;
 
@@ -113,6 +153,8 @@ function newComparison() {
     let dataset = Object.assign({}, blankDataset);
     let color = randomColor();
 
+    window.loans.push(loan);
+
     dataset.label = loan.name;
     dataset.backgroundColor = color.hex;
     dataset.borderColor = color.hex;
@@ -120,6 +162,8 @@ function newComparison() {
 
     config.data.datasets.push(dataset);
     window.myLine.update();
+
+    buildTable();
 }
 
 /**
@@ -129,14 +173,17 @@ function calculate() {
     let loan = loanFromInput();
     let term = Math.ceil(loan.periodsToZero() / 6) * 6;
 
+    window.loans.splice(0, 1, loan);
+
     window.view.repayments.value = loan.minimumRepayments().toCurrencyString();
     window.view.totalInterest.value = loan.totalInterest().toCurrencyString();
     window.view.loanEndDate.value = loan.getEndDate().toLocaleDateString();
+    window.view.totalInterest.value = loan.totalInterest().toCurrencyString();
 
     config.resolution = (term <= 120) ? 6 : 12;
-    config.data.labels = generateLabels(new Date(loan.startDate.getTime()), term, config.resolution);
 
     config.data.datasets[0].data = generatePlotPoints(loan, config.resolution);
+    config.data.datasets[0].label = loan.name;
 
     window.myLine.update();
 }
@@ -174,6 +221,38 @@ function createLumpSumNode(lumpSum) {
     window.view.lumpSumsWrapper.appendChild(liElement);
 }
 
+function buildTable() {
+    let output = '';
+    window.loans.forEach(function(loan, index) {
+        //Skip the first iteration.
+        if (index === 0) return;
+
+        output +=
+            '<tr id="loan-' + index.toString() + '">'+
+                '<td>' + loan.name + '</td>' +
+                '<td>' + loan.principal.toCurrencyString() + '</td>' +
+                '<td>' + ((loan.interestRate - 1) * 1200).toFixed(2) + '\%</td>' +
+                '<td>' + timeSavingsString(loan.term) + '</td>' +
+                '<td>' + loan.startDate.toLocaleDateString()+ '</td>' +
+                '<td>' + loan.repayment.toCurrencyString() + '</td>' +
+                '<td>' + lumpSumList(loan.lumpSums) + '</td>' +
+                '<td>' + loan.totalInterest().toCurrencyString() + '</td>' +
+                '<td>' + loan.getEndDate().toLocaleDateString() + '</td>' +
+            '</tr>';
+    });
+
+    window.view.loanTable.innerHTML = output;
+}
+
+function lumpSumList(lumpSums) {
+    let output = '<ul>';
+    lumpSums.forEach(function(lumpSum) {
+        output += '<li>' + lumpSum.date.toLocaleDateString() + ': ' + lumpSum.amount.toCurrencyString() + '</li>';
+    });
+
+    return output + '</ul>';
+}
+
 /**
  * Remove a lump sum from the lumpSums array and from the document.
  *
@@ -193,39 +272,26 @@ function removeLumpSum(lumpSum) {
 /**
  * Generate plot points for a given Loan
  *
- * @param Loan {Loan}
+ * @param loan {Loan}
  * @param d_i {number} The resolution of the graph.
  * @returns {Array}
  */
-function generatePlotPoints(Loan, d_i) {
+function generatePlotPoints(loan, d_i) {
     let values = [];
+    let date = new Date(loan.startDate.getTime());
+    let flag = false;
 
-    for (let i = 0; i <= Loan.periodsToZero(); i += d_i) {
+    while (!flag) {
         values.push({
-            x: i,
-            y: Loan.amountOwing(i)
+            x: new Date(date.getTime()),
+            y: loan.amountOwingAtDate(date).toFixed(2)
         });
+
+        flag = loan.amountOwingAtDate(date) < loan.repayment;
+        date.setMonth(date.getMonth() + d_i);
     }
 
     return values;
-}
-
-/**
- * Generate the labels for the x-axis of the chart.
- *
- * @param startDate {Date} The loan start date.
- * @param N {Number} The total number of periods.
- * @param d_i {Number} The resolution / number of periods between each calculation.
- * @returns {Array}
- */
-function generateLabels(startDate, N, d_i) {
-    let labels = [];
-    for (let i = 0; i <= N; i += d_i) {
-        labels.push(startDate.getFullYear());
-        startDate.setMonth(startDate.getMonth() + d_i);
-    }
-
-    return labels;
 }
 
 /**
@@ -246,11 +312,13 @@ function timeSavingsString(months) {
         months = (months - years * 12);
 
         returnString += years;
-        returnString += (years === 1) ? ' year ' : ' years ';
+        returnString += (years === 1) ? ' year' : ' years';
     }
 
-    returnString += months;
-    returnString += (months === 1) ? ' month' : ' months';
+    if (months > 0) {
+        returnString += ' ' + months;
+        returnString += (months === 1) ? ' month' : ' months';
+    }
 
     return returnString;
 }
@@ -260,8 +328,10 @@ window.onload = function () {
     window.myLine = new Chart(view.chart.getContext('2d'), config);
     window.startDate = new Date;
     window.view.startDate.value = window.startDate.toLocaleDateString();
-    window.lumpSums = [];
-    window.loans = [];
+    window.lumpSums = new LumpSumCollection();
+    window.loans = new LoanCollection();
+
+    calculate();
 };
 
 //Listener for the lump sum form. This creates the lump sum list elements from the form input.
