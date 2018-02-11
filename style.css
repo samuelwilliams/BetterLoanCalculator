@@ -66,6 +66,12 @@ footer {
     padding: 5px;
 }
 
+.table-lump-sums {
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
 @media print {
     .print-hide {
         display: none !important;

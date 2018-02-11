@@ -39,8 +39,8 @@ function pickColor() {
 
 const blankDataset = {
     label: '',
-    backgroundColor: ChartColors.Blue.hex,
-    borderColor: ChartColors.Blue.hex,
+    backgroundColor: ChartColors.Grey.hex,
+    borderColor: ChartColors.Grey.hex,
     data: [],
     fill: false,
     pointRadius: 2.5,
@@ -66,8 +66,8 @@ config = {
         labels: [],
         datasets: [{
             label: 'Loan',
-            backgroundColor: ChartColors.Blue.hex,
-            borderColor: ChartColors.Blue.hex,
+            backgroundColor: ChartColors.Navy.hex,
+            borderColor: ChartColors.Navy.hex,
             data: [],
             fill: false,
             pointRadius: 2.5
@@ -98,6 +98,11 @@ config = {
                 scaleLabel: {
                     display: true,
                     labelString: 'value'
+                },
+                ticks: {
+                    callback: function (value, index, values) {
+                        return value.toCurrencyString();
+                    }
                 }
             }]
         }
@@ -153,6 +158,7 @@ function newComparison() {
     let loan = loanFromInput();
     let dataset = Object.assign({}, blankDataset);
     let color = pickColor();
+    loan.color = color;
 
     window.loans.push(loan);
 
@@ -229,15 +235,17 @@ function buildTable() {
 
         output +=
             '<tr id="loan-' + index.toString() + '">'+
+                '<td style="background-color: ' + loan.color.hex + '"></td>' +
                 '<td>' + loan.name + '</td>' +
                 '<td>' + loan.principal.toCurrencyString() + '</td>' +
                 '<td>' + ((loan.interestRate - 1) * 1200).toFixed(2) + '\%</td>' +
                 '<td>' + timeSavingsString(loan.term) + '</td>' +
                 '<td>' + loan.startDate.toLocaleDateString()+ '</td>' +
+                '<td>' + loan.getEndDate().toLocaleDateString() + '</td>' +
                 '<td>' + loan.repayment.toCurrencyString() + '</td>' +
                 '<td>' + lumpSumList(loan.lumpSums) + '</td>' +
                 '<td>' + loan.totalInterest().toCurrencyString() + '</td>' +
-                '<td>' + loan.getEndDate().toLocaleDateString() + '</td>' +
+                '<td>' + timeSavingsString(dateDifferenceInMonths(loan.startDate, loan.getEndDate())) + '</td>' +
             '</tr>';
     });
 
@@ -245,7 +253,7 @@ function buildTable() {
 }
 
 function lumpSumList(lumpSums) {
-    let output = '<ul>';
+    let output = '<ul class="table-lump-sums">';
     lumpSums.forEach(function(lumpSum) {
         output += '<li>' + lumpSum.date.toLocaleDateString() + ': ' + lumpSum.amount.toCurrencyString() + '</li>';
     });

@@ -76,7 +76,7 @@ LumpSum.prototype.clone = function() {
 };
 
 /**
- * An array collection of LumpSums
+ * An array collection of <LumpSum> objects. Extends <Array> prototype.
  *
  * @constructor
  */
@@ -99,7 +99,9 @@ LumpSumCollection.prototype.clone = function() {
 };
 
 /**
- * The application
+ * The loan object. This object represents a loan. The assumptions are:
+ *   1) Each compounding period is one month, thus the loan is compounded monthly.
+ *   2) The interest rate and repayment are fixed.
  *
  * @param principal {number} The loan principal amount.
  * @param interestRate {number} The interest rate of the loan per compounding period.
@@ -182,7 +184,7 @@ Loan.prototype.totalRepayments = function() {
  *
  * @returns {number}
  */
-Loan.prototype.periodsToZero = function (){
+Loan.prototype.periodsToZero = function () {
     let lastLumpSumPeriod = 0;
     let balance = this.principal;
 
@@ -270,28 +272,53 @@ Loan.prototype.minimumRepayments = function minimumRepayments() {
     return repayments(this.principal, this.interestRate, this.term);
 };
 
+/**
+ * A collection of <Loan> objects. Extends <Array> prototype.
+ *
+ * @constructor
+ */
 function LoanCollection() {}
 
 LoanCollection.prototype = Object.create(Array.prototype);
 
-LoanCollection.prototype.earliestStartDate = function() {
-    let earliestDate = this[0].startDate;
+/**
+ * Returns the loan with the earliest start date.
+ *
+ * @returns {Loan}
+ */
+LoanCollection.prototype.getEarliestStartDate = function() {
+    if (0 === this.length) {
+        throw 'There are no Loans in the LoanCollection';
+    }
+
+    let earliestLoan = this[0];
+
     this.forEach(function(loan) {
-        if (loan.startDate.getTime() < earliestDate.getTime()) {
-            earliestDate = Loan.startDate;
+        if (loan.startDate.getTime() < earliestLoan.startDate.getTime()) {
+            earliestLoan = loan;
         }
     });
 
-    return earliestDate;
+    return earliestLoan;
 };
 
-LoanCollection.prototype.latestEndDate = function() {
-    let lastDate = this[0].getEndDate();
+/**
+ * Returns the loan with the latest end date.
+ *
+ * @returns {Loan}
+ */
+LoanCollection.prototype.getLatestEndDate = function() {
+    if (0 === this.length) {
+        throw 'There are no Loans in the LoanCollection';
+    }
+
+    let latestLoan = this[0];
+
     this.forEach(function(loan) {
-        if (loan.getEndDate().getTime() > lastDate.getTime()) {
-            lastDate = loan.getEndDate();
+        if (loan.getEndDate().getTime() > latestLoan.getEndDate().getTime()) {
+            latestLoan = loan;
         }
     });
 
-    return lastDate;
+    return latestLoan;
 };
