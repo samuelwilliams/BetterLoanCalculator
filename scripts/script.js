@@ -28,16 +28,14 @@ ChartColors = {
  */
 function pickColor() {
     if (typeof window.colorIndex === 'undefined' || window.colorIndex >= Object.keys(ChartColors).length) {
-        window.colorIndex = 0;
+        window.colorIndex = -1;
     }
 
-    let color = ChartColors[Object.keys(ChartColors)[window.colorIndex]];
     window.colorIndex++;
-
-    return color;
+    return ChartColors[Object.keys(ChartColors)[window.colorIndex]];
 }
 
-const blankDataset = {
+const blankDataSet = {
     label: '',
     backgroundColor: ChartColors.Grey.hex,
     borderColor: ChartColors.Grey.hex,
@@ -156,18 +154,17 @@ function loanFromInput() {
 
 function newComparison() {
     let loan = loanFromInput();
-    let dataset = Object.assign({}, blankDataset);
-    let color = pickColor();
-    loan.color = color;
+    let dataSet = Object.assign({}, blankDataSet);
+    loan.color = pickColor();
 
     window.loans.push(loan);
 
-    dataset.label = loan.name;
-    dataset.backgroundColor = color.hex;
-    dataset.borderColor = color.hex;
-    dataset.data = generatePlotPoints(loan, config.resolution);
+    dataSet.label = loan.name;
+    dataSet.backgroundColor = loan.color.hex;
+    dataSet.borderColor = loan.color.hex;
+    dataSet.data = generatePlotPoints(loan, config.resolution);
 
-    config.data.datasets.push(dataset);
+    config.data.datasets.push(dataSet);
     window.myLine.update();
     buildTable();
 }
