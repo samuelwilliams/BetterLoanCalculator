@@ -30,7 +30,10 @@
 
 <h1>Better Loan Repayments Calculator</h1>
 <div style="overflow: auto">
-    <form id="form" autocomplete="off">
+    <form id="form" class="print-hide" autocomplete="off">
+        <label for="Name">Name</label>
+        <input type="text" name="Name" id="Name" value="New loan" />
+
         <label for="P">Principal</label>
         <input type="text" name="P" id="P" value="300000"/>
 
@@ -49,40 +52,56 @@
         <label for="R">Monthly Repayments</label>
         <input type="text" name="R" id="R" disabled/>
 
-        <label for="TI">Total interest</label>
-        <input type="text" name="TI" id="TI" disabled/>
+        <label for="totalInterest">Total interest</label>
+        <input type="text" name="totalInterest" id="totalInterest" disabled/>
 
-        <label for="newTI">Recalculated total interest</label>
-        <input type="text" name="newTI" id="newTI" disabled/>
-
-        <label for="interestSavings">Interest Saved</label>
-        <input type="text" name="interestSavings" id="interestSavings" disabled/>
-
-        <label for="loanEndDate">Recalculated loan end date</label>
+        <label for="loanEndDate">Loan end date</label>
         <input type="text" name="loanEndDate" id="loanEndDate" disabled/>
 
-        <label for="timeSavings">Time saved on loan</label>
-        <input type="text" name="timeSavings" id="timeSavings" disabled/>
-
-        <input type="submit" value="Calculate"/>
+        <div class="form-submit">
+            <input type="submit" value="Calculate"/>
+            <input type="button" value="Add Comparison" id="addComparison" />
+        </div>
     </form>
 
     <div id="chart-wrapper">
         <canvas id="Chart"></canvas>
     </div>
 </div>
-<h2>Lump sum payments</h2>
-<ul id="lumpSums-wrapper"></ul>
 
-<form id="lumpSum" autocomplete="off">
-    <label for="lumpSum-date">Date</label>
-    <input type="text" name="lumpSum-date" id="lumpSum-date"/>
+<div  class="print-hide">
+    <h2>Lump sum payments</h2>
+    <ul id="lumpSums-wrapper"></ul>
 
-    <label for="lumpSum-amount">Amount</label>
-    <input type="text" name="lumpSum-amount" id="lumpSum-amount"/>
+    <form id="lumpSum" autocomplete="off">
+        <label for="lumpSum-date">Date</label>
+        <input type="text" name="lumpSum-date" id="lumpSum-date"/>
 
-    <input type="submit" value="Add lump sum"/>
-</form>
+        <label for="lumpSum-amount">Amount</label>
+        <input type="text" name="lumpSum-amount" id="lumpSum-amount"/>
+
+        <input type="submit" value="Add lump sum"/>
+    </form>
+</div>
+
+<table id="loanTable">
+    <thead>
+        <tr>
+            <td>Color</td>
+            <td>Name</td>
+            <td>Principal</td>
+            <td>Interest Rate</td>
+            <td>Term</td>
+            <td>Start Date</td>
+            <td>End Date</td>
+            <td>Repayments</td>
+            <td>Lump Sums</td>
+            <td>Total Interest</td>
+            <td>Loan duration</td>
+        </tr>
+    </thead>
+    <tbody id="loanTableBody"></tbody>
+</table>
 
 <footer>
     <a href="disclaimer.html">Disclaimer</a> |
@@ -90,6 +109,7 @@
     &copy; 2017 <a href="https://github.com/samuelwilliams/">Samuel Williams</a>
 </footer>
 
+<script type="text/javascript" src="scripts/moment.min.js"></script>
 <script type="text/javascript" src="scripts/Chart.min.js"></script>
 <script type="text/javascript" src="scripts/Calculations.js"></script>
 <script type="text/javascript" src="scripts/script.js"></script>
