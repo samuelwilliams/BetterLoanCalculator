@@ -1,6 +1,7 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Loan repayments calculator</title>
 
     <link rel="apple-touch-icon" sizes="57x57" href="favicon/apple-icon-57x57.png">
@@ -21,10 +22,13 @@
     <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
     <meta name="theme-color" content="#ffffff">
 
-    <link rel="stylesheet" href="jquery-ui-1.12.1/jquery-ui.min.css">
     <script src="scripts/jquery-3.2.1.min.js"></script>
     <script src="jquery-ui-1.12.1/jquery-ui.min.js"></script>
+    <script src="spectrum-1.8.0/spectrum.js"></script>
+    
     <link rel="stylesheet" href="style.css"/>
+    <link rel="stylesheet" href="jquery-ui-1.12.1/jquery-ui.min.css"/>
+    <link rel="stylesheet" href="spectrum-1.8.0/spectrum.css"/>
 </head>
 <body>
 
@@ -35,10 +39,16 @@
         <input type="text" name="Name" id="Name" value="New loan" />
 
         <label for="P">Principal</label>
-        <input type="text" name="P" id="P" value="300000"/>
+        <input type="text" name="P" id="P" value="500000"/>
+
+        <label for="LEF">Loan Establishment Fee</label>
+        <input type="text" name="LEF" id="LEF" value="600"/>
 
         <label for="I">Interest Rate</label>
-        <input type="text" name="I" id="I" value="4.65"/>
+        <input type="text" name="I" id="I" value="3.84"/>
+
+        <label for="F">Monthly Fees</label>
+        <input type="text" name="F" id="F" value="10"/>
 
         <label for="N">Term</label>
         <input type="text" name="N" id="N" value="25"/>
@@ -48,9 +58,16 @@
 
         <label for="extras">Extra repayments</label>
         <input type="text" name="extras" value="0" id="extras"/>
+        <div id="extras-switch">
+            <label><input type="radio" name="extrasFreq" id="extrasFreq-fn" value="fn" /> Fortnightly</label>
+            <label><input type="radio" name="extrasFreq" id="extrasFreq-mo" value="monthly" checked /> Monthly</label>
+        </div>
 
-        <label for="R">Monthly Repayments</label>
+        <label for="R">Minimum Monthly Repayments</label>
         <input type="text" name="R" id="R" disabled/>
+
+        <label for="R-fn">Minimum Fortnightly Repayments</label>
+        <input type="text" name="R-fn" id="R-fn" disabled/>
 
         <label for="totalInterest">Total interest</label>
         <input type="text" name="totalInterest" id="totalInterest" disabled/>
@@ -91,17 +108,21 @@
             <td>Name</td>
             <td>Principal</td>
             <td>Interest Rate</td>
+            <td>Monthly Fees</td>
             <td>Term</td>
             <td>Start Date</td>
             <td>End Date</td>
-            <td>Repayments</td>
+            <td>Minimum Repayments</td>
+            <td>Extra Repayments</td>
             <td>Lump Sums</td>
             <td>Total Interest</td>
             <td>Loan duration</td>
+            <td>Delete Loan</td>
         </tr>
     </thead>
     <tbody id="loanTableBody"></tbody>
 </table>
+<p>Hint: You can change the loan color and the loan name.</p>
 
 <footer>
     <a href="disclaimer.html">Disclaimer</a> |
