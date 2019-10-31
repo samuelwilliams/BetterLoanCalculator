@@ -66,6 +66,10 @@ footer {
     padding: 5px;
 }
 
+#extras-switch {
+    margin-left: 40px;
+}
+
 .table-lump-sums {
     padding: 0;
     margin: 0;
