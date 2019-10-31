@@ -6,11 +6,12 @@
  * @param P {number} Principal of the loan
  * @param I {number} The interest rate greater than 1, e.g. 4.59%, I = 1.0459
  * @param R {number} The periodic repayment amount.
+ * @param F {number} The periodic fee amount.
  * @param n {number} The period
  * @returns {number}
  */
-function owing(P, I, R, n) {
-    return P * I ** n - R * ( (1 - I ** n) / (1 - I) );
+function owing(P, I, R, F, n) {
+    return P * I ** n - (R - F) * ( (1 - I ** n) / (1 - I) );
 }
 
 /**
@@ -19,10 +20,11 @@ function owing(P, I, R, n) {
  * @param P {number} Principal of the loan
  * @param I {number} The interest rate greater than 1, e.g. 4.59%, I = 1.0459
  * @param R {number} The periodic repayment amount.
+ * @param F {number} The periodic fee amount.
  * @returns {number}
  */
-function periodsToZero(P, I, R) {
-    return -Math.log( (P / R) * (1 - I) + 1 ) / Math.log(I);
+function periodsToZero(P, I, R, F) {
+    return -Math.log( (P / (R - F)) * (1 - I) + 1 ) / Math.log(I);
 }
 
 /**
@@ -30,11 +32,12 @@ function periodsToZero(P, I, R) {
  *
  * @param P {number} Principal
  * @param I {number} The interest rate greater than 1, e.g. 4.59%, I = 1.0459
+ * @param F {number} The periodic fee amount.
  * @param n {number} Number of periods the loan is compounded over.
  * @returns {number}
  */
-function repayments(P, I, n) {
-    return (P * I ** n) * (1 - I) / (1 - I ** n);
+function repayments(P, I, F, n) {
+    return F + (P * I ** n) * (1 - I) / (1 - I ** n);
 }
 
 /**
@@ -106,11 +109,13 @@ LumpSumCollection.prototype.clone = function() {
  * @param principal {number} The loan principal amount.
  * @param interestRate {number} The interest rate of the loan per compounding period.
  * @param repayment {number} Loan repayment each compounding period.
+ * @param extraRepayment {number} Extra loan repayment each compounding period.
+ * @param fees {number} The periodic fee amount.
  * @param startDate {Date}
  * @param lumpSums {Array.<LumpSum>}
  * @constructor
  */
-function Loan(principal, interestRate, repayment, startDate, lumpSums) {
+function Loan(principal, interestRate, repayment, extraRepayment, fees, startDate, lumpSums) {
 
     /**
      * @type {number}
@@ -126,6 +131,21 @@ function Loan(principal, interestRate, repayment, startDate, lumpSums) {
      * @type {number}
      */
     this.repayment = repayment;
+
+    /**
+     * @type {number}
+     */
+    this.extraRepayment = extraRepayment;
+
+    /**
+     * @type {number}
+     */
+    this._repayment = repayment + extraRepayment;
+
+    /**
+     * @type {number}
+     */
+    this.fees = fees;
 
     /**
      * @type {Date}
@@ -170,12 +190,12 @@ Loan.prototype.totalRepayments = function() {
     let lastLumpSumPeriod = 0;
 
     this.lumpSums.forEach((lumpSum) => {
-        total += (lumpSum.period - lastLumpSumPeriod) * this.repayment + lumpSum.amount;
+        total += (lumpSum.period - lastLumpSumPeriod) * this._repayment + lumpSum.amount;
         lastLumpSumPeriod = lumpSum.period;
     });
 
     return total +
-        this.repayment * (this.periodsToZero() - lastLumpSumPeriod - 1) +
+        this._repayment * (this.periodsToZero() - lastLumpSumPeriod - 1) +
         this.amountOwing(this.periodsToZero() -1);
 };
 
@@ -189,11 +209,11 @@ Loan.prototype.periodsToZero = function () {
     let balance = this.principal;
 
     this.lumpSums.forEach((lumpSum) => {
-        balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+        balance = owing(balance, this.interestRate, this._repayment, this.fees, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
         lastLumpSumPeriod = lumpSum.period;
     });
 
-    let remainingPeriods = periodsToZero(balance, this.interestRate, this.repayment);
+    let remainingPeriods = periodsToZero(balance, this.interestRate, this._repayment, this.fees);
 
     // Handle number rounding. If the decimal place GT 0.001, round up, otherwise round down.
     if (remainingPeriods - Math.floor(remainingPeriods) > 0.001) {
@@ -217,12 +237,12 @@ Loan.prototype.amountOwing = function(n) {
 
     this.lumpSums.forEach((lumpSum) => {
         if (lumpSum.period <= n) {
-            balance = owing(balance, this.interestRate, this.repayment, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
+            balance = owing(balance, this.interestRate, this._repayment, this.fees, lumpSum.period - lastLumpSumPeriod) - lumpSum.amount;
             lastLumpSumPeriod = lumpSum.period;
         }
     });
 
-    return Math.max(0, owing(balance, this.interestRate, this.repayment, n - lastLumpSumPeriod));
+    return Math.max(0, owing(balance, this.interestRate, this._repayment, this.fees, n - lastLumpSumPeriod));
 };
 
 /**
@@ -269,7 +289,7 @@ Loan.prototype.getEndDate = function getEndDate() {
  * @returns {number}
  */
 Loan.prototype.minimumRepayments = function minimumRepayments() {
-    return repayments(this.principal, this.interestRate, this.term);
+    return repayments(this.principal, this.interestRate, this.fees, this.term);
 };
 
 /**
@@ -322,3 +342,4 @@ LoanCollection.prototype.getLatestEndDate = function() {
 
     return latestLoan;
 };
+

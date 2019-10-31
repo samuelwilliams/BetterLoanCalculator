@@ -27,12 +27,14 @@ ChartColors = {
  * @returns {*}
  */
 function pickColor() {
-    if (typeof window.colorIndex === 'undefined' || window.colorIndex >= Object.keys(ChartColors).length) {
+    if (typeof window.colorIndex === 'undefined' || window.colorIndex >= Object.keys(window.ChartColors).length) {
         window.colorIndex = -1;
     }
 
     window.colorIndex++;
-    return ChartColors[Object.keys(ChartColors)[window.colorIndex]];
+    let col = (window.ChartColors[Object.keys(window.ChartColors)[window.colorIndex]]).hex;
+
+    return tinycolor(col);
 }
 
 const blankDataSet = {
@@ -103,6 +105,16 @@ config = {
                     }
                 }
             }]
+        },
+        tooltips: { 
+            callbacks: {
+                label: function(tooltipItem, data) {
+                    return tooltipItem.yLabel.toCurrencyString();
+                },
+                title: function(tooltipItem, data) {
+                    return tooltipItem[0].xLabel.toLocaleFormat();
+                }
+            }
         }
     }
 };
@@ -117,11 +129,14 @@ function View() {
     this.interestRate = document.getElementById('I');
     this.loanTerm = document.getElementById('N');
     this.principal = document.getElementById('P');
+    this.loanEstFee = document.getElementById('LEF');
+    this.fees = document.getElementById('F');
     this.totalInterest = document.getElementById('totalInterest');
     this.loanEndDate = document.getElementById('loanEndDate');
     this.extraRepayments = document.getElementById('extras');
     this.startDate = document.getElementById('start-date');
     this.repayments = document.getElementById('R');
+    this.repayments_fn = document.getElementById('R-fn');
     this.chart = document.getElementById('Chart');
     this.name = document.getElementById('Name');
 
@@ -130,6 +145,7 @@ function View() {
     this.lumpSumsWrapper = document.getElementById('lumpSums-wrapper');
 
     this.loanTable = document.getElementById('loanTableBody');
+    this.extrasFreqFn = document.getElementById('extrasFreq-fn');
 }
 
 /**
@@ -138,14 +154,18 @@ function View() {
  * @returns {Loan}
  */
 function loanFromInput() {
-    let principal = parseFloat(view.principal.value || '0');
+    let principal = parseFloat(view.principal.value || '0') + parseFloat(view.loanEstFee.value || '0');
     let interest = 1 + parseFloat(view.interestRate.value || '0') / 1200;
     let term = 12 * parseFloat(view.loanTerm.value || '0');
-    let minRepayments = repayments(principal, interest, term);
+    let fees = parseFloat(view.fees.value || '0');
+    let minRepayments = repayments(principal, interest, fees, term);
     let extraRepayments = parseFloat(window.view.extraRepayments.value || '0');
+    if (view.extrasFreqFn.checked == true) {
+        extraRepayments = extraRepayments * (26/12);
+    }
     let startDate = new Date(window.view.startDate.value);
 
-    let loan = new Loan(principal, interest, minRepayments + extraRepayments, startDate, window.lumpSums.clone());
+    let loan = new Loan(principal, interest, minRepayments, extraRepayments, fees, startDate, window.lumpSums.clone());
     loan.name = view.name.value;
     loan.term = term;
 
@@ -155,18 +175,21 @@ function loanFromInput() {
 function newComparison() {
     let loan = loanFromInput();
     let dataSet = Object.assign({}, blankDataSet);
-    loan.color = pickColor();
+    loan.color = window.color;
 
     window.loans.push(loan);
 
     dataSet.label = loan.name;
-    dataSet.backgroundColor = loan.color.hex;
-    dataSet.borderColor = loan.color.hex;
+    dataSet.backgroundColor = loan.color.toHexString();
+    dataSet.borderColor = loan.color.toHexString();
     dataSet.data = generatePlotPoints(loan, config.resolution);
 
     config.data.datasets.push(dataSet);
     window.myLine.update();
     buildTable();
+
+    calculate();
+    window.color = window.pickColor();
 }
 
 /**
@@ -179,14 +202,17 @@ function calculate() {
     window.loans.splice(0, 1, loan);
 
     window.view.repayments.value = loan.minimumRepayments().toCurrencyString();
+    window.view.repayments_fn.value = (loan.minimumRepayments() * 12/26).toCurrencyString();
     window.view.totalInterest.value = loan.totalInterest().toCurrencyString();
-    window.view.loanEndDate.value = loan.getEndDate().toLocaleDateString();
+    window.view.loanEndDate.value = loan.getEndDate().toLocaleFormat();
     window.view.totalInterest.value = loan.totalInterest().toCurrencyString();
 
-    config.resolution = (term <= 120) ? 6 : 12;
+    config.resolution = (term <= 120) ? 3 : 12;
 
     config.data.datasets[0].data = generatePlotPoints(loan, config.resolution);
     config.data.datasets[0].label = loan.name;
+    config.data.datasets[0].backgroundColor = window.color.toHexString();
+    config.data.datasets[0].borderColor = window.color.toHexString();
 
     window.myLine.update();
 }
@@ -199,7 +225,7 @@ function calculate() {
 function createLumpSumNode(lumpSum) {
     let dateElement = document.createElement('span');
     dateElement.className = 'date';
-    dateElement.appendChild(document.createTextNode(lumpSum.date.toLocaleDateString()));
+    dateElement.appendChild(document.createTextNode(lumpSum.date.toLocaleFormat()));
 
     let amountElement = document.createElement('span');
     amountElement.className = 'amount';
@@ -232,27 +258,42 @@ function buildTable() {
 
         output +=
             '<tr id="loan-' + index.toString() + '">'+
-                '<td style="background-color: ' + loan.color.hex + '"></td>' +
-                '<td>' + loan.name + '</td>' +
+                '<td><input class="color-picker" id="loan-' + index.toString() + '-color" value="' + loan.color.toHexString() + '" /></td>' +
+                '<td><span contentEditable="true" id="loan-' + index.toString() + '-name" oninput="updateLoanName('+ index.toString() +')">' + loan.name + '</span></td>' +
                 '<td>' + loan.principal.toCurrencyString() + '</td>' +
                 '<td>' + ((loan.interestRate - 1) * 1200).toFixed(2) + '\%</td>' +
+                '<td>' + loan.fees.toCurrencyString() + '</td>' +
                 '<td>' + timeSavingsString(loan.term) + '</td>' +
-                '<td>' + loan.startDate.toLocaleDateString()+ '</td>' +
-                '<td>' + loan.getEndDate().toLocaleDateString() + '</td>' +
+                '<td>' + loan.startDate.toLocaleFormat()+ '</td>' +
+                '<td>' + loan.getEndDate().toLocaleFormat() + '</td>' +
                 '<td>' + loan.repayment.toCurrencyString() + '</td>' +
+                '<td>' + loan.extraRepayment.toCurrencyString() + '</td>' +
                 '<td>' + lumpSumList(loan.lumpSums) + '</td>' +
                 '<td>' + loan.totalInterest().toCurrencyString() + '</td>' +
                 '<td>' + timeSavingsString(dateDifferenceInMonths(loan.startDate, loan.getEndDate())) + '</td>' +
+                '<td><a href="#" onclick="deleteLoan(event, ' + index.toString() + ')">Delete</a></td>' +
             '</tr>';
     });
 
     window.view.loanTable.innerHTML = output;
+    initialiseColorPickers();
+}
+
+function initialiseColorPickers() {
+    window.loans.forEach(function(loan, index) {
+        let id = '#loan-' + index.toString() + '-color';
+        $(id).spectrum({
+            change: function(color) {
+                window.updateLoanColor(index, color);
+            }
+        });
+    });
 }
 
 function lumpSumList(lumpSums) {
     let output = '<ul class="table-lump-sums">';
     lumpSums.forEach(function(lumpSum) {
-        output += '<li>' + lumpSum.date.toLocaleDateString() + ': ' + lumpSum.amount.toCurrencyString() + '</li>';
+        output += '<li>' + lumpSum.date.toLocaleFormat() + ': ' + lumpSum.amount.toCurrencyString() + '</li>';
     });
 
     return output + '</ul>';
@@ -303,7 +344,7 @@ function generatePlotPoints(loan, d_i) {
  * Formats a duration of months into a string.
  *
  * @example
- * // returns '1 year 1 month'
+ * // returns '1 year 7 months'
  * timeSavingsString(19);
  *
  * @param months {number}
@@ -332,12 +373,36 @@ window.onload = function () {
     window.view = new View();
     window.myLine = new Chart(view.chart.getContext('2d'), config);
     window.startDate = new Date;
-    window.view.startDate.value = window.startDate.toLocaleDateString();
+    window.view.startDate.value = window.startDate.toLocaleFormat();
     window.lumpSums = new LumpSumCollection();
     window.loans = new LoanCollection();
+    window.color = window.pickColor();
 
     calculate();
 };
+
+function updateLoanName(index) {
+    let id = 'loan-' + index + '-name';
+    let name = document.getElementById(id).innerText;
+    window.loans[parseInt(index)].name = name;
+    config.data.datasets[parseInt(index)].label = name;
+    window.myLine.update();
+}
+
+function updateLoanColor(index, color) {
+    window.loans[parseInt(index)].color = color;
+    config.data.datasets[parseInt(index)].backgroundColor = color.toHexString();
+    config.data.datasets[parseInt(index)].borderColor = color.toHexString();
+    window.myLine.update();
+}
+
+function deleteLoan(event, index) {
+    event.preventDefault();
+    window.loans.splice(index, 1);
+    config.data.datasets.splice(index, 1);
+    window.myLine.update();
+    buildTable();
+}
 
 //Listener for the lump sum form. This creates the lump sum list elements from the form input.
 document.getElementById('lumpSum').addEventListener('submit', function (event) {
@@ -345,7 +410,7 @@ document.getElementById('lumpSum').addEventListener('submit', function (event) {
 
     let lumpSum = new LumpSum(
         new Date(window.view.lumpSumDate.value),
-        parseFloat(window.view.lumpSumAmount.value)
+        parseFloat(window.view.lumpSumAmount.value) || 0
     );
 
     window.lumpSums.push(lumpSum);
@@ -368,8 +433,8 @@ document.getElementById('addComparison').addEventListener('click', function (eve
 
 //Initialise the JQuery-UI date pickers.
 $(function () {
-    $('#lumpSum-date').datepicker();
-    $('#start-date').datepicker();
+    $('#lumpSum-date').datepicker({ dateFormat: 'd M yy' });
+    $('#start-date').datepicker({ dateFormat: 'd M yy' });
 });
 
 /**
@@ -382,4 +447,19 @@ $(function () {
  */
 Number.prototype.toCurrencyString = function() {
     return '$' + this.toFixed(2).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
+
+Date.prototype.toLocaleFormat = function() {
+    var monthNames = [
+        "Jan", "Feb", "Mar",
+        "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep",
+        "Oct", "Nov", "Dec"
+      ];
+    
+      var day = this.getDate();
+      var monthIndex = this.getMonth();
+      var year = this.getFullYear();
+    
+      return day + ' ' + monthNames[monthIndex] + ' ' + year;
 };
